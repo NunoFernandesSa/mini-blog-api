@@ -13,3 +13,34 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+
+// ----- Data models -----
+
+model User {
+  id      String    @id @default(cuid())
+  email   String    @unique
+  name    String
+  Post    Post[]
+  Comment Comment[]
+}
+
+model Post {
+  id        String    @id @default(cuid())
+  title     String
+  content   String?
+  published Boolean   @default(false)
+  authorId  String
+  author    User      @relation(fields: [authorId], references: [id])
+  Comment   Comment[]
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id])
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

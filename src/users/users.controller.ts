@@ -25,10 +25,12 @@ export class UsersController {
     return this.usersService.findOne(id);
   }
 
-  // @Post()
-  // create(@Body() createUserDto: CreateUserDto) {
-  //   return this.usersService.create(createUserDto);
-  // }
+  @Post('/create')
+  create(
+    @Body() createUserDto: { name: string; email: string; password: string },
+  ) {
+    return this.usersService.create(createUserDto);
+  }
 
   // @Patch(':id')
   // update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {

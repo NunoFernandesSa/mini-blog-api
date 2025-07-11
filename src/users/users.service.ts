@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { empty } from 'generated/prisma/runtime/library';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma.service';
 
 @Injectable()
@@ -41,10 +41,47 @@ export class UsersService {
     return user;
   }
 
-  // // ----- Create a User -----
-  // create(createUserDto: any) {
-  //   return 'This action adds a new user';
-  // }
+  // ----- Create a User -----
+  async create(createUserDto: {
+    name: string;
+    email: string;
+    password: string;
+  }): Promise<Object | string> {
+    const { name, email, password } = createUserDto;
+
+    // Check if the user already exists
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    // Validate user data
+    // Ensure that name, email, and password are provided
+    if (!name || !email || !password) {
+      throw new BadRequestException('Invalid user data');
+    }
+
+    // If the user already exists, return an error message
+    if (existingUser) {
+      return 'User with this email already exists';
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await this.prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    });
+    return user;
+  }
 
   // // ----- Update a User -----
   // update(id: string, updateUserDto: any) {

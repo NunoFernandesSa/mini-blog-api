@@ -16,12 +16,12 @@ export class UsersController {
   // ----- endpoints -----
 
   @Get()
-  findAll() {
+  findAll(): Promise<Object[] | string> {
     return this.usersService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id') id: string): Promise<Object | string> {
     return this.usersService.findOne(id);
   }
 

@@ -1,6 +1,12 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma.service';
+import { CreateUserDto } from './create-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -41,46 +47,50 @@ export class UsersService {
     return user;
   }
 
-  // ----- Create a User -----
-  async create(createUserDto: {
-    name: string;
-    email: string;
-    password: string;
-  }): Promise<Object | string> {
+  // ----- Create User -----
+  async create(
+    createUserDto: CreateUserDto,
+  ): Promise<{ id: string; name: string; email: string }> {
     const { name, email, password } = createUserDto;
 
-    // Check if the user already exists
+    // ------------------------------
+    // ----- Validate user data -----
+    // ------------------------------
+
+    // ----- Check if the user already exists -----
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
     });
-
-    // Validate user data
-    // Ensure that name, email, and password are provided
-    if (!name || !email || !password) {
-      throw new BadRequestException('Invalid user data');
-    }
-
     // If the user already exists, return an error message
     if (existingUser) {
-      return 'User with this email already exists';
+      throw new ConflictException('User with this email already exists');
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await this.prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-      },
-    });
-    return user;
+    try {
+      const user = await this.prisma.user.create({
+        data: {
+          name,
+          email,
+          password: hashedPassword,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      });
+      return user;
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new ConflictException('User with this email already exists');
+      }
+      throw new InternalServerErrorException(
+        'An error occurred while creating the user',
+      );
+    }
   }
 
   // // ----- Update a User -----

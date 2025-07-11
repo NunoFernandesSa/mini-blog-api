@@ -12,42 +12,19 @@ import { CreateUserDto } from './create-user.dto';
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // ----- Find All Users -----
-  async findAll(): Promise<Object[] | string> {
-    const users = await this.prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-      },
-    });
-
-    if (users.length === 0) {
-      return 'No users found';
-    }
-
-    return users;
-  }
-
-  // ----- Find One user By ID -----
-  async findOne(id: string): Promise<Object | string> {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-      },
-    });
-
-    if (!user) {
-      return 'User not found';
-    }
-
-    return user;
-  }
-
-  // ----- Create User -----
+  // ----- Create a User -----
+  /**
+   * Creates a new user with the provided data.
+   *
+   * @param createUserDto - The data transfer object containing user details (name, email, password).
+   * @returns A promise that resolves to an object containing the created user's id, name, and email.
+   * @throws {ConflictException} If a user with the provided email already exists.
+   * @throws {InternalServerErrorException} If an unexpected error occurs during user creation.
+   *
+   * @remarks
+   * - The password is securely hashed before storing.
+   * - Only the user's id, name, and email are returned; the password is never exposed.
+   */
   async create(
     createUserDto: CreateUserDto,
   ): Promise<{ id: string; name: string; email: string }> {
@@ -91,6 +68,41 @@ export class UsersService {
         'An error occurred while creating the user',
       );
     }
+  }
+
+  // ----- Find All Users -----
+  async findAll(): Promise<Object[] | string> {
+    const users = await this.prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    });
+
+    if (users.length === 0) {
+      return 'No users found';
+    }
+
+    return users;
+  }
+
+  // ----- Find user By ID -----
+  async findOne(id: string): Promise<Object | string> {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    });
+
+    if (!user) {
+      return 'User not found';
+    }
+
+    return user;
   }
 
   // // ----- Update a User -----

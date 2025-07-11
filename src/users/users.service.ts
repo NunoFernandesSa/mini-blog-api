@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma.service';
@@ -71,20 +72,34 @@ export class UsersService {
   }
 
   // ----- Find All Users -----
-  async findAll(): Promise<Object[] | string> {
-    const users = await this.prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-      },
-    });
+  /**
+   * Retrieves all users from the database, selecting only their `id`, `name`, and `email` fields.
+   *
+   * @returns A promise that resolves to an array of user objects, each containing `id`, `name`, and `email`.
+   * @throws {NotFoundException} If no users are found in the database.
+   * @throws {InternalServerErrorException} If an error occurs while fetching users.
+   */
+  async findAll(): Promise<{ id: string; name: string; email: string }[]> {
+    try {
+      // Fetch all users with selected fields
+      const users = await this.prisma.user.findMany({
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      });
 
-    if (users.length === 0) {
-      return 'No users found';
+      // If no users are found, return a not found message
+      if (users.length === 0) {
+        throw new NotFoundException('No users found');
+      }
+      return users;
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'An error occurred while fetching users',
+      );
     }
-
-    return users;
   }
 
   // ----- Find user By ID -----

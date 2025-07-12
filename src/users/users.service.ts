@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ConflictException,
   Injectable,
   InternalServerErrorException,
@@ -7,7 +6,7 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma.service';
-import { CreateUserDto } from './create-user.dto';
+import { CreateUserDto } from './dto/create-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -26,9 +25,10 @@ export class UsersService {
    * - The password is securely hashed before storing.
    * - Only the user's id, name, and email are returned; the password is never exposed.
    */
-  async create(
-    createUserDto: CreateUserDto,
-  ): Promise<{ id: string; name: string; email: string }> {
+  async create(createUserDto: CreateUserDto): Promise<{
+    message: string;
+    user: { name: string; email: string };
+  }> {
     const { name, email, password } = createUserDto;
 
     // ------------------------------
@@ -55,12 +55,14 @@ export class UsersService {
           password: hashedPassword,
         },
         select: {
-          id: true,
           name: true,
           email: true,
         },
       });
-      return user;
+      return {
+        message: 'User successfully created',
+        user,
+      };
     } catch (error) {
       if (error.code === 'P2002') {
         throw new ConflictException('User with this email already exists');

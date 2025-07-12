@@ -9,6 +9,9 @@ import {
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { User } from 'generated/prisma';
+import { UserResponseDto } from './dto/user-response.dto';
+import { ApiProperty } from '@nestjs/swagger';
 
 @Controller('users')
 export class UsersController {
@@ -17,7 +20,8 @@ export class UsersController {
   // ----- endpoints -----
 
   @Get()
-  findAll(): Promise<Object[] | string> {
+  @ApiProperty({ type: [UserResponseDto] })
+  findAll(): Promise<UserResponseDto[]> {
     return this.usersService.findAll();
   }
 

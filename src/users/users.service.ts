@@ -7,6 +7,7 @@ import {
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UserResponseDto } from './dto/user-response.dto';
 
 @Injectable()
 export class UsersService {
@@ -81,7 +82,7 @@ export class UsersService {
    * @throws {NotFoundException} If no users are found in the database.
    * @throws {InternalServerErrorException} If an error occurs while fetching users.
    */
-  async findAll(): Promise<{ id: string; name: string; email: string }[]> {
+  async findAll(): Promise<UserResponseDto[]> {
     try {
       // Fetch all users with selected fields
       const users = await this.prisma.user.findMany({

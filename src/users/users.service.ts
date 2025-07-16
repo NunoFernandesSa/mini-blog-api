@@ -1,5 +1,7 @@
 import {
+  BadRequestException,
   ConflictException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -8,6 +10,8 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
+import { PrismaClientKnownRequestError } from 'generated/prisma/runtime/library';
+import * as cuid from 'cuid';
 
 @Injectable()
 export class UsersService {
@@ -106,21 +110,35 @@ export class UsersService {
   }
 
   // ----- Find user By ID -----
-  async findOne(id: string): Promise<Object | string> {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-      },
-    });
-
-    if (!user) {
-      return 'User not found';
+  async findOne(id: string): Promise<UserResponseDto> {
+    if (!cuid.isCuid(id)) {
+      throw new BadRequestException('Invalid user ID format');
     }
 
-    return user;
+    try {
+      // Fetch the user by ID with selected fields
+      const user = await this.prisma.user.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      });
+      // If the user is not found, return a not found message
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      // Return the user data
+      return user;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'An error occurred while fetching the user',
+      );
+    }
   }
 
   // // ----- Update a User -----
